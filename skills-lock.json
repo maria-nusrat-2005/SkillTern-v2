@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ask-questions-if-underspecified": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/ask-questions-if-underspecified/skills/ask-questions-if-underspecified/SKILL.md",
+      "computedHash": "4b14f63c6c668ffaf25b9e6c9b0fc4a6f0c8e7d504a86d46bb8154bcb0b5397a"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+# Implementation Progress Checklist: Skilltern
+
+This document tracks overall progress against implementation milestones.
+
+- `[x]` Core Platform Bootstrap
+  - `[x]` Format PRD and brief definitions.
+  - `[x]` Establish system context packs.
+  - `[x]` Specify API endpoint specifications and routing structure.
+  - `[x]` Map database schemas, validations, and indexes.
+  - `[x]` Generate base folder structure.
+  - `[x]` Setup Express server entry and DB configs.
+  - `[x]` Setup baseline React entry-points.
+- `[x]` Phase 1: Authentication & Profiles (Backend)
+  - `[x]` Implement local credentials signup and login API.
+  - `[x]` Implement OAuth redirection middlewares.
+  - `[x]` Create Yup validation middleware.
+  - `[x]` Create JWT generation utility.
+  - `[x]` Create onboarding profile forms UI.
+  - `[x]` Build CV uploader service connected to Cloudinary.
+- `[x]` Phase 2: Internship board & applications (Backend + Frontend)
+  - `[x]` Implement Internship CRUD REST routes.
+  - `[x]` Implement Application management REST routes.
+  - `[x]` Build internship browse and feed filter pages (Frontend).
+  - `[x]` Implement direct application workflows (Frontend).
+- `[x]` Phase 4+5: Frontend Pages & Authentication UI
+  - `[x]` Login page with validation and error handling.
+  - `[x]` Register page with role selector and field errors.
+  - `[x]` Student dashboard (internship discovery grid with filters).
+  - `[x]` Recruiter dashboard (stats cards and postings table).
+  - `[x]` Internship detail page with Apply Now flow.
+  - `[x]` Applications tracker with status badges.
+  - `[x]` Profile page (student skills editor / recruiter company editor).
+  - `[x]` Role-based sidebar navigation with mobile hamburger.
+  - `[x]` Zustand auth store with API actions (checkAuth, login, register, logout).
+- `[x]` Phase 3: Smart Matching Engine
+  - `[x]` Implement calculations parsing student skills vs job required skills.
+  - `[x]` Create visual match badges and explanation drawer views.
+  - `[x]` Implement missing skills gap report with learning resource mapping.
+- `[x]` Phase 4: Review Loop & Moderation
+  - `[x]` Implement double-blind internship review forms.
+  - `[x]` Implement admin verification dashboard for recruiters.
+- `[x]` Phase 7: Testing & Security Audits
+  - `[x]` Setup Jest and Supertest in backend workspace.
+  - `[x]` Implement unit and integration test suites for all backend controllers (auth, internships, ratings, matching).
+  - `[x]` Verify rate limiting and input validation schemas.
+- [x] Phase 8: Production Deployments
+  - [x] Configure client-side SPA routing for Vercel.
+  - [x] Configure Render Blueprint deployment metadata (render.yaml).
+  - [x] Specify production database credentials mapping in the documentation.
+- [x] Post-Deployment Maintenance & Verification
+  - [x] Fix infinite loading loop on 401 response interceptor.
+  - [x] Verify client-side registration, onboarding, login, session persistence, and logout.
+  - [x] Integrate `agentation` development overlay in `client/src/App.jsx`.
+  - [x] Document implemented API surface in `api/SKILLTERN_API.md` (29 endpoints, matching engine, double-blind ratings, error model).
+  - [x] Remove mock/static OAuth logic and buttons, expose JWT token payload in responses, and create API testing guide.
+  - [x] Consolidate student workspace into exactly 4 frontend sections (Dashboard, Profile, Resume, Applications) mapped to the scalable backend.
+  - [x] Create/update root `.gitignore` to ignore dependency folders, build directories, environment configs, local uploads, and temp workspace files.
+

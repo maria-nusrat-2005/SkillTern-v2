@@ -1,0 +1,36 @@
+services:
+  # Backend Express API Server
+  - type: web
+    name: skilltern-api
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  # Frontend Vite React Client
+  - type: static
+    name: skilltern-client
+    rootDir: client
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    routes:
+      - src: /*
+        dest: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
