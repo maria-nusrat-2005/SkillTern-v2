@@ -81,8 +81,7 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("applications")
       .update({ status: data.status, updated_at: new Date().toISOString() })
-      .eq("id", data.id)
-      .eq("user_id", userId);
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     await supabase.from("application_status_history").insert({
       application_id: data.id,
@@ -144,4 +143,50 @@ export const deleteApplication = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const listCompanyApplications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    // Fetch applications with their internships
+    const { data: apps, error } = await supabase
+      .from("applications")
+      .select(`
+        *,
+        internship:internship_id (
+          id,
+          title,
+          company,
+          company_domain,
+          user_id
+        )
+      `)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    // Filter to show only applications for internships owned by this recruiter
+    const companyApps = (apps ?? []).filter((a: any) => a.internship?.user_id === userId);
+
+    if (companyApps.length === 0) return { applications: [] };
+
+    // Fetch profiles for applicants
+    const applicantIds = Array.from(new Set(companyApps.map((a: any) => a.user_id)));
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("user_id", applicantIds);
+
+    if (profilesError) throw new Error(profilesError.message);
+
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+
+    return {
+      applications: companyApps.map((a: any) => ({
+        ...a,
+        profile: profileMap.get(a.user_id) ?? null,
+      })),
+    };
   });

@@ -411,6 +411,7 @@ export type Database = {
           salary: string | null
           tech_stack: Json
           title: string
+          user_id: string | null
           work_model: string | null
         }
         Insert: {
@@ -431,6 +432,7 @@ export type Database = {
           salary?: string | null
           tech_stack?: Json
           title: string
+          user_id?: string | null
           work_model?: string | null
         }
         Update: {
@@ -451,6 +453,7 @@ export type Database = {
           salary?: string | null
           tech_stack?: Json
           title?: string
+          user_id?: string | null
           work_model?: string | null
         }
         Relationships: []
@@ -526,6 +529,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          company_domain: string | null
+          company_name: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -537,11 +542,14 @@ export type Database = {
           phone: string | null
           portfolio_url: string | null
           profile_completion: number
+          role: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          company_domain?: string | null
+          company_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -553,11 +561,14 @@ export type Database = {
           phone?: string | null
           portfolio_url?: string | null
           profile_completion?: number
+          role?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          company_domain?: string | null
+          company_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -569,6 +580,7 @@ export type Database = {
           phone?: string | null
           portfolio_url?: string | null
           profile_completion?: number
+          role?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 function publicClient() {
   return createClient<Database>(
@@ -67,3 +68,86 @@ export const getInternshipFacets = createServerFn({ method: "GET" }).handler(asy
   const domains = Array.from(new Set((data ?? []).map((r) => r.domain).filter(Boolean))).sort();
   return { domains: domains as string[] };
 });
+
+export const listCompanyInternships = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
+      .from("internships")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const createInternship = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      title: string;
+      domain: string;
+      location: string;
+      company: string;
+      company_domain?: string | null;
+      company_type: string;
+      salary?: string | null;
+      duration?: string | null;
+      work_model?: string | null;
+      experience_level?: string | null;
+      description?: string | null;
+      requirements?: string[] | null;
+      responsibilities?: string[] | null;
+      tech_stack?: string[] | null;
+      preferred_skills?: string[] | null;
+    }) => {
+      if (!d.title || !d.domain || !d.location || !d.company) {
+        throw new Error("Missing required fields (title, domain, location, company)");
+      }
+      return d;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("internships")
+      .insert({
+        title: data.title,
+        domain: data.domain,
+        location: data.location,
+        company: data.company,
+        company_domain: data.company_domain ?? null,
+        company_type: data.company_type || "Startup",
+        salary: data.salary ?? null,
+        duration: data.duration ?? null,
+        work_model: data.work_model ?? null,
+        experience_level: data.experience_level ?? null,
+        description: data.description ?? null,
+        requirements: data.requirements ?? [],
+        responsibilities: data.responsibilities ?? [],
+        tech_stack: data.tech_stack ?? [],
+        preferred_skills: data.preferred_skills ?? [],
+        user_id: userId,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteInternship = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => {
+    if (!d?.id) throw new Error("id is required");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("internships")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

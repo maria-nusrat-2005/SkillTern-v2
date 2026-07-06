@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSelectRoleRouteImport } from './routes/_authenticated/select-role'
 import { Route as AuthenticatedResumeRouteImport } from './routes/_authenticated/resume'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
@@ -20,11 +21,13 @@ import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCompareRouteImport } from './routes/_authenticated/compare'
+import { Route as AuthenticatedCompanyRouteImport } from './routes/_authenticated/company'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAssessmentsRouteImport } from './routes/_authenticated/assessments'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedInternshipsIndexRouteImport } from './routes/_authenticated/internships.index'
 import { Route as AuthenticatedCompaniesIndexRouteImport } from './routes/_authenticated/companies.index'
 import { Route as AuthenticatedInternshipsIdRouteImport } from './routes/_authenticated/internships.$id'
@@ -43,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSelectRoleRoute = AuthenticatedSelectRoleRouteImport.update({
+  id: '/select-role',
+  path: '/select-role',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedResumeRoute = AuthenticatedResumeRouteImport.update({
   id: '/resume',
@@ -84,6 +92,11 @@ const AuthenticatedCompareRoute = AuthenticatedCompareRouteImport.update({
   path: '/compare',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCompanyRoute = AuthenticatedCompanyRouteImport.update({
+  id: '/company',
+  path: '/company',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -111,6 +124,11 @@ const AuthenticatedApplicationsRoute =
     path: '/applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedInternshipsIndexRoute =
   AuthenticatedInternshipsIndexRouteImport.update({
     id: '/internships/',
@@ -139,11 +157,13 @@ const AuthenticatedCompaniesCompanyRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/assessments': typeof AuthenticatedAssessmentsRoute
   '/assistant': typeof AuthenticatedAssistantRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/company': typeof AuthenticatedCompanyRoute
   '/compare': typeof AuthenticatedCompareRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -152,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/resume': typeof AuthenticatedResumeRoute
+  '/select-role': typeof AuthenticatedSelectRoleRoute
   '/companies/$company': typeof AuthenticatedCompaniesCompanyRoute
   '/internships/$id': typeof AuthenticatedInternshipsIdRoute
   '/companies/': typeof AuthenticatedCompaniesIndexRoute
@@ -160,11 +181,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/assessments': typeof AuthenticatedAssessmentsRoute
   '/assistant': typeof AuthenticatedAssistantRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/company': typeof AuthenticatedCompanyRoute
   '/compare': typeof AuthenticatedCompareRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -173,6 +196,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/resume': typeof AuthenticatedResumeRoute
+  '/select-role': typeof AuthenticatedSelectRoleRoute
   '/companies/$company': typeof AuthenticatedCompaniesCompanyRoute
   '/internships/$id': typeof AuthenticatedInternshipsIdRoute
   '/companies': typeof AuthenticatedCompaniesIndexRoute
@@ -183,11 +207,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/assessments': typeof AuthenticatedAssessmentsRoute
   '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/company': typeof AuthenticatedCompanyRoute
   '/_authenticated/compare': typeof AuthenticatedCompareRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -196,6 +222,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/resume': typeof AuthenticatedResumeRoute
+  '/_authenticated/select-role': typeof AuthenticatedSelectRoleRoute
   '/_authenticated/companies/$company': typeof AuthenticatedCompaniesCompanyRoute
   '/_authenticated/internships/$id': typeof AuthenticatedInternshipsIdRoute
   '/_authenticated/companies/': typeof AuthenticatedCompaniesIndexRoute
@@ -206,11 +233,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/admin'
     | '/applications'
     | '/assessments'
     | '/assistant'
     | '/bookmarks'
     | '/calendar'
+    | '/company'
     | '/compare'
     | '/dashboard'
     | '/insights'
@@ -219,6 +248,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/resume'
+    | '/select-role'
     | '/companies/$company'
     | '/internships/$id'
     | '/companies/'
@@ -227,11 +257,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin'
     | '/applications'
     | '/assessments'
     | '/assistant'
     | '/bookmarks'
     | '/calendar'
+    | '/company'
     | '/compare'
     | '/dashboard'
     | '/insights'
@@ -240,6 +272,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/resume'
+    | '/select-role'
     | '/companies/$company'
     | '/internships/$id'
     | '/companies'
@@ -249,11 +282,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/admin'
     | '/_authenticated/applications'
     | '/_authenticated/assessments'
     | '/_authenticated/assistant'
     | '/_authenticated/bookmarks'
     | '/_authenticated/calendar'
+    | '/_authenticated/company'
     | '/_authenticated/compare'
     | '/_authenticated/dashboard'
     | '/_authenticated/insights'
@@ -262,6 +297,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
     | '/_authenticated/resume'
+    | '/_authenticated/select-role'
     | '/_authenticated/companies/$company'
     | '/_authenticated/internships/$id'
     | '/_authenticated/companies/'
@@ -296,6 +332,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/select-role': {
+      id: '/_authenticated/select-role'
+      path: '/select-role'
+      fullPath: '/select-role'
+      preLoaderRoute: typeof AuthenticatedSelectRoleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/resume': {
       id: '/_authenticated/resume'
@@ -353,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompareRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/company': {
+      id: '/_authenticated/company'
+      path: '/company'
+      fullPath: '/company'
+      preLoaderRoute: typeof AuthenticatedCompanyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/calendar': {
       id: '/_authenticated/calendar'
       path: '/calendar'
@@ -388,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/internships/': {
       id: '/_authenticated/internships/'
       path: '/internships'
@@ -420,11 +477,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
   AuthenticatedAssessmentsRoute: typeof AuthenticatedAssessmentsRoute
   AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRoute
   AuthenticatedCompareRoute: typeof AuthenticatedCompareRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
@@ -433,6 +492,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedResumeRoute: typeof AuthenticatedResumeRoute
+  AuthenticatedSelectRoleRoute: typeof AuthenticatedSelectRoleRoute
   AuthenticatedCompaniesCompanyRoute: typeof AuthenticatedCompaniesCompanyRoute
   AuthenticatedInternshipsIdRoute: typeof AuthenticatedInternshipsIdRoute
   AuthenticatedCompaniesIndexRoute: typeof AuthenticatedCompaniesIndexRoute
@@ -440,11 +500,13 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
   AuthenticatedAssessmentsRoute: AuthenticatedAssessmentsRoute,
   AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedCompanyRoute: AuthenticatedCompanyRoute,
   AuthenticatedCompareRoute: AuthenticatedCompareRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
@@ -453,6 +515,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedResumeRoute: AuthenticatedResumeRoute,
+  AuthenticatedSelectRoleRoute: AuthenticatedSelectRoleRoute,
   AuthenticatedCompaniesCompanyRoute: AuthenticatedCompaniesCompanyRoute,
   AuthenticatedInternshipsIdRoute: AuthenticatedInternshipsIdRoute,
   AuthenticatedCompaniesIndexRoute: AuthenticatedCompaniesIndexRoute,

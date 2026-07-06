@@ -100,3 +100,120 @@ export const savePreferences = createServerFn({ method: "POST" })
 
     return saved;
   });
+
+type RoleInput = {
+  role: "student" | "company";
+  company_name?: string | null;
+  company_domain?: string | null;
+};
+
+export const updateUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: RoleInput) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const updatePayload: any = { role: data.role };
+    if (data.role === "company") {
+      updatePayload.company_name = data.company_name ?? null;
+      updatePayload.company_domain = data.company_domain ?? null;
+      updatePayload.onboarding_completed = true; // Skip CV onboarding for company recruiters
+    }
+    const { data: updated, error } = await supabase
+      .from("profiles")
+      .update(updatePayload)
+      .eq("user_id", userId)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return updated;
+  });
+
+export const adminListUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    // Check if requester is admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile?.role !== "admin") {
+      throw new Error("Unauthorized: Admin privileges required");
+    }
+
+    const { data: users, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return users;
+  });
+
+export const adminUpdateUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { targetUserId: string; role: "student" | "company" | "admin" }) => {
+    console.log("adminUpdateUserRole validation received:", d);
+    if (!d?.targetUserId || !d?.role) throw new Error("targetUserId and role are required");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Check if requester is admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile?.role !== "admin") {
+      throw new Error("Unauthorized: Admin privileges required");
+    }
+
+    const { data: updated, error } = await supabase
+      .from("profiles")
+      .update({ role: data.role })
+      .eq("user_id", data.targetUserId)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return updated;
+  });
+
+export const adminGetStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    // Check admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile?.role !== "admin") {
+      throw new Error("Unauthorized: Admin privileges required");
+    }
+
+    const { count: usersCount } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+
+    const { count: internshipsCount } = await supabase
+      .from("internships")
+      .select("*", { count: "exact", head: true });
+
+    const { count: applicationsCount } = await supabase
+      .from("applications")
+      .select("*", { count: "exact", head: true });
+
+    return {
+      users: usersCount ?? 0,
+      internships: internshipsCount ?? 0,
+      applications: applicationsCount ?? 0,
+    };
+  });
