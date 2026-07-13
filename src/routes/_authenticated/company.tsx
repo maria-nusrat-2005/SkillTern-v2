@@ -89,6 +89,7 @@ function CompanyDashboardPage() {
   const [responsibilities, setResponsibilities] = useState("");
   const [techStack, setTechStack] = useState("");
   const [preferredSkills, setPreferredSkills] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
   // Queries
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfileData() });
@@ -163,6 +164,7 @@ function CompanyDashboardPage() {
       setResponsibilities("");
       setTechStack("");
       setPreferredSkills("");
+      setContactEmail("");
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to create listing.");
@@ -205,6 +207,7 @@ function CompanyDashboardPage() {
       company: companyName,
       company_domain: companyDomain,
       company_type: "Startup",
+      contact_email: contactEmail,
       salary,
       duration,
       work_model: workModel,
@@ -256,6 +259,18 @@ function CompanyDashboardPage() {
                     <Label htmlFor="domain">Domain / Category</Label>
                     <Input id="domain" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="e.g. Software Engineering" required />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Company Contact Email (for applications)</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="e.g. careers@company.com"
+                    required
+                  />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -879,6 +894,38 @@ function CompanyDashboardPage() {
                   </Button>
                 )}
               </div>
+
+              {/* Submitted Documents Section */}
+              {(selectedApplicant.cv_url || selectedApplicant.ssc_certificate_url || selectedApplicant.hsc_certificate_url) && (
+                <div className="border-t border-border pt-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <FileText className="h-4.5 w-4.5 text-primary" /> Submitted Application Documents
+                  </h4>
+                  <div className="flex flex-wrap gap-2.5">
+                    {selectedApplicant.cv_url && (
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <a href={selectedApplicant.cv_url} target="_blank" rel="noreferrer">
+                          <FileText className="h-4 w-4 text-primary" /> CV / Resume <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
+                    {selectedApplicant.ssc_certificate_url && (
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <a href={selectedApplicant.ssc_certificate_url} target="_blank" rel="noreferrer">
+                          <Award className="h-4 w-4 text-amber-500" /> SSC Certificate <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
+                    {selectedApplicant.hsc_certificate_url && (
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <a href={selectedApplicant.hsc_certificate_url} target="_blank" rel="noreferrer">
+                          <Award className="h-4 w-4 text-emerald-500" /> HSC Certificate <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Status Update section */}
               <div className="border-t border-border pt-4 space-y-3">

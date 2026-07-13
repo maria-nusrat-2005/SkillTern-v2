@@ -27,9 +27,23 @@ export const listApplications = createServerFn({ method: "GET" })
 
 export const saveApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { internshipId: string; status?: string; notes?: string }) => {
+  .inputValidator((d: { 
+    internshipId: string; 
+    status?: string; 
+    notes?: string;
+    cvUrl?: string | null;
+    sscCertificateUrl?: string | null;
+    hscCertificateUrl?: string | null;
+  }) => {
     if (!d?.internshipId) throw new Error("internshipId is required");
-    return { internshipId: d.internshipId, status: d.status ?? "saved", notes: d.notes ?? null };
+    return { 
+      internshipId: d.internshipId, 
+      status: d.status ?? "saved", 
+      notes: d.notes ?? null,
+      cvUrl: d.cvUrl ?? null,
+      sscCertificateUrl: d.sscCertificateUrl ?? null,
+      hscCertificateUrl: d.hscCertificateUrl ?? null,
+    };
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -43,7 +57,14 @@ export const saveApplication = createServerFn({ method: "POST" })
     if (existing) {
       const { error } = await supabase
         .from("applications")
-        .update({ status: data.status, notes: data.notes, updated_at: new Date().toISOString() })
+        .update({ 
+          status: data.status, 
+          notes: data.notes, 
+          cv_url: data.cvUrl,
+          ssc_certificate_url: data.sscCertificateUrl,
+          hsc_certificate_url: data.hscCertificateUrl,
+          updated_at: new Date().toISOString() 
+        })
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
       if (existing.status !== data.status) {
@@ -58,7 +79,15 @@ export const saveApplication = createServerFn({ method: "POST" })
 
     const { data: created, error } = await supabase
       .from("applications")
-      .insert({ user_id: userId, internship_id: data.internshipId, status: data.status, notes: data.notes })
+      .insert({ 
+        user_id: userId, 
+        internship_id: data.internshipId, 
+        status: data.status, 
+        notes: data.notes,
+        cv_url: data.cvUrl,
+        ssc_certificate_url: data.sscCertificateUrl,
+        hsc_certificate_url: data.hscCertificateUrl
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);

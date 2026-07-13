@@ -83,11 +83,14 @@ export type Database = {
         Row: {
           board_position: number
           created_at: string
+          cv_url: string | null
           deadline: string | null
+          hsc_certificate_url: string | null
           id: string
           internship_id: string
           interview_at: string | null
           notes: string | null
+          ssc_certificate_url: string | null
           status: string
           updated_at: string
           user_id: string
@@ -95,11 +98,14 @@ export type Database = {
         Insert: {
           board_position?: number
           created_at?: string
+          cv_url?: string | null
           deadline?: string | null
+          hsc_certificate_url?: string | null
           id?: string
           internship_id: string
           interview_at?: string | null
           notes?: string | null
+          ssc_certificate_url?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -107,11 +113,14 @@ export type Database = {
         Update: {
           board_position?: number
           created_at?: string
+          cv_url?: string | null
           deadline?: string | null
+          hsc_certificate_url?: string | null
           id?: string
           internship_id?: string
           interview_at?: string | null
           notes?: string | null
+          ssc_certificate_url?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -397,6 +406,7 @@ export type Database = {
           company: string
           company_domain: string | null
           company_type: string
+          contact_email: string | null
           created_at: string
           description: string | null
           domain: string
@@ -418,6 +428,7 @@ export type Database = {
           company: string
           company_domain?: string | null
           company_type: string
+          contact_email?: string | null
           created_at?: string
           description?: string | null
           domain: string
@@ -439,6 +450,7 @@ export type Database = {
           company?: string
           company_domain?: string | null
           company_type?: string
+          contact_email?: string | null
           created_at?: string
           description?: string | null
           domain?: string

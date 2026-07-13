@@ -92,6 +92,7 @@ export const createInternship = createServerFn({ method: "POST" })
       company: string;
       company_domain?: string | null;
       company_type: string;
+      contact_email?: string | null;
       salary?: string | null;
       duration?: string | null;
       work_model?: string | null;
@@ -119,6 +120,7 @@ export const createInternship = createServerFn({ method: "POST" })
         company: data.company,
         company_domain: data.company_domain ?? null,
         company_type: data.company_type || "Startup",
+        contact_email: data.contact_email ?? null,
         salary: data.salary ?? null,
         duration: data.duration ?? null,
         work_model: data.work_model ?? null,

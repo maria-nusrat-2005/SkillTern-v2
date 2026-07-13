@@ -18,6 +18,9 @@ import {
   FileDiff,
   Copy,
   X,
+  Upload,
+  FileText,
+  Award,
 } from "lucide-react";
 import { useCompare } from "@/hooks/use-compare";
 import { getInternship } from "@/lib/internships.functions";
@@ -33,9 +36,15 @@ import { CompanyLogo } from "@/components/company-logo";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { CompareToggle } from "@/components/compare-bits";
 import { InternshipCard, type InternshipListItem } from "@/components/internship-card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -54,6 +63,15 @@ function InternshipDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const compare = useCompare();
+  const { user } = useAuth();
+  
+  // States for uploads
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [sscFile, setSscFile] = useState<File | null>(null);
+  const [hscFile, setHscFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const q = useQuery({ queryKey: ["internship", id], queryFn: () => getInternship({ data: { id } }) });
   const similarQ = useQuery({
     queryKey: ["similar", id],
@@ -61,13 +79,82 @@ function InternshipDetail() {
   });
 
   const save = useMutation({
-    mutationFn: (status: string) => saveApplication({ data: { internshipId: id, status } }),
-    onSuccess: (_d, status) => {
+    mutationFn: (variables: { 
+      status: string; 
+      cvUrl?: string | null; 
+      sscCertificateUrl?: string | null; 
+      hscCertificateUrl?: string | null; 
+    }) => saveApplication({ 
+      data: { 
+        internshipId: id, 
+        status: variables.status, 
+        cvUrl: variables.cvUrl, 
+        sscCertificateUrl: variables.sscCertificateUrl, 
+        hscCertificateUrl: variables.hscCertificateUrl 
+      } 
+    }),
+    onSuccess: (_d, variables) => {
       qc.invalidateQueries({ queryKey: ["applications"] });
-      toast.success(status === "applied" ? "Marked as applied!" : "Saved to your applications.");
+      toast.success(variables.status === "applied" ? "Application submitted successfully!" : "Saved to your applications.");
+      setIsApplyModalOpen(false);
+      // Reset files
+      setCvFile(null);
+      setSscFile(null);
+      setHscFile(null);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Something went wrong"),
   });
+
+  const handleApplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please sign in first.");
+      return;
+    }
+    if (!cvFile) {
+      toast.error("Please select a CV/Resume to upload.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // 1. Upload CV
+      const cvPath = `${user.id}/${Date.now()}-cv-${cvFile.name}`;
+      const { error: cvErr } = await supabase.storage.from("resumes").upload(cvPath, cvFile);
+      if (cvErr) throw cvErr;
+      const cvUrl = supabase.storage.from("resumes").getPublicUrl(cvPath).data.publicUrl;
+
+      // 2. Upload SSC if selected
+      let sscUrl: string | null = null;
+      if (sscFile) {
+        const sscPath = `${user.id}/${Date.now()}-ssc-${sscFile.name}`;
+        const { error: sscErr } = await supabase.storage.from("resumes").upload(sscPath, sscFile);
+        if (sscErr) throw sscErr;
+        sscUrl = supabase.storage.from("resumes").getPublicUrl(sscPath).data.publicUrl;
+      }
+
+      // 3. Upload HSC if selected
+      let hscUrl: string | null = null;
+      if (hscFile) {
+        const hscPath = `${user.id}/${Date.now()}-hsc-${hscFile.name}`;
+        const { error: hscErr } = await supabase.storage.from("resumes").upload(hscPath, hscFile);
+        if (hscErr) throw hscErr;
+        hscUrl = supabase.storage.from("resumes").getPublicUrl(hscPath).data.publicUrl;
+      }
+
+      // 4. Save application
+      await save.mutateAsync({
+        status: "applied",
+        cvUrl,
+        sscCertificateUrl: sscUrl,
+        hscCertificateUrl: hscUrl,
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload documents.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const stipendQ = useQuery({
     queryKey: ["domain-stipend", q.data?.domain],
@@ -319,19 +406,24 @@ function InternshipDetail() {
           <Card className="p-6">
             <h2 className="font-display font-semibold">Apply</h2>
             <p className="mt-1 text-sm text-muted-foreground">Track this internship in Skilltern.</p>
+            {job.contact_email && (
+              <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-primary" /> Application contact: {job.contact_email}
+              </p>
+            )}
             <div className="mt-4 space-y-2">
               <Button
                 className="w-full gap-2"
                 disabled={save.isPending}
-                onClick={() => save.mutate("applied")}
+                onClick={() => setIsApplyModalOpen(true)}
               >
-                <CheckCircle2 className="h-4 w-4" /> Mark as applied
+                <CheckCircle2 className="h-4 w-4" /> Apply Now
               </Button>
               <Button
                 variant="outline"
                 className="w-full gap-2"
                 disabled={save.isPending}
-                onClick={() => save.mutate("saved")}
+                onClick={() => save.mutate({ status: "saved" })}
               >
                 <Bookmark className="h-4 w-4" /> Save for later
               </Button>
@@ -470,6 +562,85 @@ function InternshipDetail() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Submit Application Dialog with Document Uploads */}
+      <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
+        <DialogContent className="max-w-md">
+          <form onSubmit={handleApplySubmit} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-primary" /> Apply for {job.title}
+              </DialogTitle>
+              <DialogDescription>
+                Please upload the required documents to submit your application. Only PDF format is accepted.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="cv-upload" className="text-sm font-semibold flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-primary" /> CV / Resume (Required)
+                </Label>
+                <Input
+                  id="cv-upload"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
+                  required
+                  disabled={uploading}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ssc-upload" className="text-sm font-semibold flex items-center gap-1.5">
+                  <Award className="h-4 w-4 text-amber-500" /> SSC Certificate (Optional)
+                </Label>
+                <Input
+                  id="ssc-upload"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setSscFile(e.target.files?.[0] ?? null)}
+                  disabled={uploading}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="hsc-upload" className="text-sm font-semibold flex items-center gap-1.5">
+                  <Award className="h-4 w-4 text-emerald-500" /> HSC Certificate (Optional)
+                </Label>
+                <Input
+                  id="hsc-upload"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setHscFile(e.target.files?.[0] ?? null)}
+                  disabled={uploading}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-border flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsApplyModalOpen(false)}
+                disabled={uploading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={uploading}>
+                {uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Submit Application"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
