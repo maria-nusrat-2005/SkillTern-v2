@@ -21,6 +21,7 @@ import {
   Upload,
   FileText,
   Award,
+  Mail,
 } from "lucide-react";
 import { useCompare } from "@/hooks/use-compare";
 import { getInternship } from "@/lib/internships.functions";
