@@ -35,6 +35,7 @@ import { listCompanyInternships, createInternship, deleteInternship } from "@/li
 import { listCompanyApplications, updateApplicationStatus } from "@/lib/applications.functions";
 import { getCompany } from "@/lib/companies.functions";
 import { CompanyLogo } from "@/components/company-logo";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
