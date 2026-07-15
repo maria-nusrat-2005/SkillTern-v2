@@ -543,6 +543,11 @@ export type Database = {
           avatar_url: string | null
           company_domain: string | null
           company_name: string | null
+          company_type: string | null
+          company_size: string | null
+          founded_year: number | null
+          company_bio: string | null
+          logo_url: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -562,6 +567,11 @@ export type Database = {
           avatar_url?: string | null
           company_domain?: string | null
           company_name?: string | null
+          company_type?: string | null
+          company_size?: string | null
+          founded_year?: number | null
+          company_bio?: string | null
+          logo_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -581,6 +591,11 @@ export type Database = {
           avatar_url?: string | null
           company_domain?: string | null
           company_name?: string | null
+          company_type?: string | null
+          company_size?: string | null
+          founded_year?: number | null
+          company_bio?: string | null
+          logo_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null

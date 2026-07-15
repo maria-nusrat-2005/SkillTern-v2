@@ -40,6 +40,11 @@ type ProfileInput = {
   portfolio_url?: string | null;
   company_name?: string | null;
   company_domain?: string | null;
+  company_type?: string | null;
+  company_size?: string | null;
+  founded_year?: number | null;
+  company_bio?: string | null;
+  logo_url?: string | null;
 };
 
 function completion(p: ProfileInput): number {
@@ -52,6 +57,11 @@ function completion(p: ProfileInput): number {
     p.portfolio_url,
     p.company_name,
     p.company_domain,
+    p.company_type,
+    p.company_size,
+    p.founded_year,
+    p.company_bio,
+    p.logo_url,
   ].filter((f) => f !== undefined);
   const filled = fields.filter((f) => f && String(f).trim().length > 0).length;
   return fields.length > 0 ? Math.round((filled / fields.length) * 100) : 0;

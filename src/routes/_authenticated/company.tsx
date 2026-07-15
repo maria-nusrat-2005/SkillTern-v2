@@ -26,8 +26,10 @@ import {
   ThumbsUp,
   ThumbsDown,
   Wallet,
-  Settings
+  Settings,
+  Upload
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { getProfileData, updateProfile } from "@/lib/profile.functions";
 import { listCompanyInternships, createInternship, deleteInternship } from "@/lib/internships.functions";
 import { listCompanyApplications, updateApplicationStatus } from "@/lib/applications.functions";
@@ -76,7 +78,7 @@ function CompanyDashboardPage() {
   const [selectedApplicant, setSelectedApplicant] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState("applicants");
 
-  // Form State
+  
   const [title, setTitle] = useState("");
   const [domain, setDomain] = useState("");
   const [location, setLocation] = useState("");
@@ -90,6 +92,10 @@ function CompanyDashboardPage() {
   const [techStack, setTechStack] = useState("");
   const [preferredSkills, setPreferredSkills] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  
+  const [postCompany, setPostCompany] = useState("");
+  const [postCompanyDomain, setPostCompanyDomain] = useState("");
+  const [postCompanyType, setPostCompanyType] = useState("Startup");
 
   // Queries
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfileData() });
@@ -99,7 +105,6 @@ function CompanyDashboardPage() {
   const companyName = profileQ.data?.profile?.company_name ?? "Your Company";
   const companyDomain = profileQ.data?.profile?.company_domain ?? "";
 
-  // Company Profile Form State
   const [profileForm, setProfileForm] = useState({
     full_name: "",
     location: "",
@@ -108,9 +113,13 @@ function CompanyDashboardPage() {
     portfolio_url: "",
     company_name: "",
     company_domain: "",
+    company_type: "",
+    company_size: "",
+    founded_year: "",
+    company_bio: "",
+    logo_url: "",
   });
 
-  // Sync profile data when loaded
   useEffect(() => {
     if (profileQ.data?.profile) {
       const p = profileQ.data.profile;
@@ -122,13 +131,27 @@ function CompanyDashboardPage() {
         portfolio_url: p.portfolio_url ?? "",
         company_name: p.company_name ?? "",
         company_domain: p.company_domain ?? "",
+        company_type: p.company_type ?? "",
+        company_size: p.company_size ?? "",
+        founded_year: p.founded_year ? String(p.founded_year) : "",
+        company_bio: p.company_bio ?? "",
+        logo_url: p.logo_url ?? "",
       });
+      setPostCompany(p.company_name ?? "");
+      setPostCompanyDomain(p.company_domain ?? "");
+      setPostCompanyType(p.company_type || "Startup");
     }
   }, [profileQ.data]);
 
   // Profile Save Mutation
   const saveProfileM = useMutation({
-    mutationFn: () => updateProfile({ data: profileForm }),
+    mutationFn: () =>
+      updateProfile({
+        data: {
+          ...profileForm,
+          founded_year: profileForm.founded_year ? parseInt(profileForm.founded_year, 10) : null,
+        },
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profile"] });
       qc.invalidateQueries({ queryKey: ["company", companyName] });
@@ -138,6 +161,110 @@ function CompanyDashboardPage() {
       toast.error(e instanceof Error ? e.message : "Failed to save profile");
     },
   });
+
+  // Logo upload state
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  // Settings states backed by localStorage
+  const [emailNotify, setEmailNotify] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("recruiter_email_notify") !== "false";
+    }
+    return true;
+  });
+  const [browserNotify, setBrowserNotify] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("recruiter_browser_notify") === "true";
+    }
+    return false;
+  });
+  const [profileVisible, setProfileVisible] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("recruiter_profile_visible") !== "false";
+    }
+    return true;
+  });
+  const [devMode, setDevMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("recruiter_dev_mode") === "true";
+    }
+    return false;
+  });
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File is too large. Max size is 2MB.");
+      return;
+    }
+
+    const userId = profileQ.data?.profile?.user_id;
+    if (!userId) {
+      toast.error("User ID not found. Please reload page.");
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${userId}/${Date.now()}-logo.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("logos")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("logos")
+        .getPublicUrl(filePath);
+
+      setProfileForm(prev => ({ ...prev, logo_url: publicUrl }));
+      toast.success("Logo uploaded successfully! Click save profile details to persist changes.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleClearAllPostings = async () => {
+    if (!confirm("Are you sure you want to delete all job postings? This action is irreversible.")) return;
+    const postings = internshipsQ.data ?? [];
+    if (postings.length === 0) {
+      toast.info("No postings to delete.");
+      return;
+    }
+    try {
+      for (const post of postings) {
+        await deleteMutation.mutateAsync({ id: post.id });
+      }
+      toast.success("All postings deleted successfully.");
+    } catch (err: any) {
+      toast.error("Failed to delete some postings.");
+    }
+  };
+
+  const handleResetProfile = () => {
+    if (!confirm("Are you sure you want to reset all profile details? This will clear your form fields locally.")) return;
+    setProfileForm({
+      full_name: "",
+      location: "",
+      phone: "",
+      linkedin_url: "",
+      portfolio_url: "",
+      company_name: "",
+      company_domain: "",
+      company_type: "",
+      company_size: "",
+      founded_year: "",
+      company_bio: "",
+      logo_url: "",
+    });
+    toast.success("Form fields reset locally. Click save to persist.");
+  };
 
   // Public Preview Query
   const companyPublicQ = useQuery({
@@ -204,9 +331,9 @@ function CompanyDashboardPage() {
       title,
       domain,
       location,
-      company: companyName,
-      company_domain: companyDomain,
-      company_type: "Startup",
+      company: postCompany || companyName,
+      company_domain: postCompanyDomain || companyDomain,
+      company_type: postCompanyType,
       contact_email: contactEmail,
       salary,
       duration,
@@ -246,10 +373,48 @@ function CompanyDashboardPage() {
               <DialogHeader>
                 <DialogTitle>Post a New Internship</DialogTitle>
                 <DialogDescription>
-                  Enter the details for the new internship listing. We will auto-fill your company details.
+                  Enter the details for the new internship listing. You can set the company details manually below.
                 </DialogDescription>
               </DialogHeader>
               <div className="mt-6 space-y-4">
+                {/* Manual Company Override Fields */}
+                <div className="p-4 rounded-lg border bg-muted/40 grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="postCompany">Company Name</Label>
+                    <Input
+                      id="postCompany"
+                      value={postCompany}
+                      onChange={(e) => setPostCompany(e.target.value)}
+                      placeholder="e.g. Acme Corporation"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="postCompanyDomain">Company Domain</Label>
+                    <Input
+                      id="postCompanyDomain"
+                      value={postCompanyDomain}
+                      onChange={(e) => setPostCompanyDomain(e.target.value)}
+                      placeholder="e.g. acme.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="postCompanyType">Company Type</Label>
+                    <Select value={postCompanyType} onValueChange={setPostCompanyType}>
+                      <SelectTrigger id="postCompanyType">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Startup">Startup</SelectItem>
+                        <SelectItem value="Enterprise">Enterprise</SelectItem>
+                        <SelectItem value="Agency">Agency</SelectItem>
+                        <SelectItem value="NGO">NGO / Non-profit</SelectItem>
+                        <SelectItem value="Educational Institution">Educational Institution</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="title">Internship Title</Label>
@@ -413,6 +578,9 @@ function CompanyDashboardPage() {
           <TabsTrigger value="preview" className="gap-2">
             <Eye className="h-4 w-4" /> View Public Page
           </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-2">
+            <Settings className="h-4 w-4" /> Settings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="applicants">
@@ -554,6 +722,64 @@ function CompanyDashboardPage() {
                 <Building2 className="h-5 w-5 text-primary" /> Company Details
               </h2>
               <div className="mt-5 space-y-4">
+                {/* Logo Upload Section */}
+                <div className="flex items-center gap-4 p-4 rounded-lg border border-dashed border-border bg-muted/40 mb-6">
+                  <div className="relative group">
+                    <CompanyLogo
+                      domain={profileForm.company_domain}
+                      name={profileForm.company_name}
+                      logoUrl={profileForm.logo_url}
+                      size={64}
+                      className="transition-transform group-hover:scale-105"
+                    />
+                    {logoUploading && (
+                      <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
+                        <span className="h-4 w-4 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-sm font-semibold">Company Logo</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Upload custom square logo. Fallback is Google favicon. Max 2MB.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-upload-input"
+                        disabled={logoUploading}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 cursor-pointer"
+                        asChild
+                        disabled={logoUploading}
+                      >
+                        <label htmlFor="logo-upload-input" className="cursor-pointer">
+                          <Upload className="h-3.5 w-3.5" />
+                          {logoUploading ? "Uploading..." : "Upload logo"}
+                        </label>
+                      </Button>
+                      {profileForm.logo_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setProfileForm(p => ({ ...p, logo_url: "" }))}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="profile-company-name" className="mb-1.5 block">Company Name</Label>
                   <Input
@@ -566,7 +792,7 @@ function CompanyDashboardPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label htmlFor="profile-company-domain">Company Website / Domain</Label>
-                    <span className="text-[10px] text-muted-foreground">Logo fetched automatically</span>
+                    <span className="text-[10px] text-muted-foreground">Used for fallback favicon fetching</span>
                   </div>
                   <Input
                     id="profile-company-domain"
@@ -575,14 +801,65 @@ function CompanyDashboardPage() {
                     placeholder="e.g. acme.com (no https://)"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="profile-location" className="mb-1.5 block">Location</Label>
-                  <Input
-                    id="profile-location"
-                    value={profileForm.location}
-                    onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
-                    placeholder="e.g. Dhaka, Bangladesh"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="profile-company-type" className="mb-1.5 block">Company Type</Label>
+                    <Select
+                      value={profileForm.company_type}
+                      onValueChange={(val) => setProfileForm({ ...profileForm, company_type: val })}
+                    >
+                      <SelectTrigger id="profile-company-type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Startup">Startup</SelectItem>
+                        <SelectItem value="Enterprise">Enterprise</SelectItem>
+                        <SelectItem value="Agency">Agency</SelectItem>
+                        <SelectItem value="NGO">NGO / Non-profit</SelectItem>
+                        <SelectItem value="Educational Institution">Educational Institution</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="profile-company-size" className="mb-1.5 block">Company Size</Label>
+                    <Select
+                      value={profileForm.company_size}
+                      onValueChange={(val) => setProfileForm({ ...profileForm, company_size: val })}
+                    >
+                      <SelectTrigger id="profile-company-size">
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-10">1-10 employees</SelectItem>
+                        <SelectItem value="11-50">11-50 employees</SelectItem>
+                        <SelectItem value="51-200">51-200 employees</SelectItem>
+                        <SelectItem value="201-500">201-500 employees</SelectItem>
+                        <SelectItem value="500+">500+ employees</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="profile-location" className="mb-1.5 block">Location</Label>
+                    <Input
+                      id="profile-location"
+                      value={profileForm.location}
+                      onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                      placeholder="e.g. Dhaka, Bangladesh"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profile-founded-year" className="mb-1.5 block">Founded Year</Label>
+                    <Input
+                      id="profile-founded-year"
+                      type="number"
+                      value={profileForm.founded_year}
+                      onChange={(e) => setProfileForm({ ...profileForm, founded_year: e.target.value })}
+                      placeholder="e.g. 2018"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="profile-portfolio-url" className="mb-1.5 block">Full Website URL</Label>
@@ -591,6 +868,16 @@ function CompanyDashboardPage() {
                     value={profileForm.portfolio_url}
                     onChange={(e) => setProfileForm({ ...profileForm, portfolio_url: e.target.value })}
                     placeholder="e.g. https://www.acme.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="profile-company-bio" className="mb-1.5 block">Company Bio / Description</Label>
+                  <Textarea
+                    id="profile-company-bio"
+                    value={profileForm.company_bio}
+                    onChange={(e) => setProfileForm({ ...profileForm, company_bio: e.target.value })}
+                    placeholder="Write a short summary about your organization, mission, and work environment..."
+                    rows={4}
                   />
                 </div>
               </div>
@@ -680,7 +967,7 @@ function CompanyDashboardPage() {
                 <Card className="p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <CompanyLogo domain={data.companyDomain} name={data.company} size={56} />
+                      <CompanyLogo domain={data.companyDomain} name={data.company} logoUrl={data.logoUrl} size={56} />
                       <div>
                         <h1 className="font-display text-2xl font-bold tracking-tight">{data.company}</h1>
                         {data.companyType && (
@@ -782,6 +1069,48 @@ function CompanyDashboardPage() {
 
                   <div className="space-y-6">
                     <Card className="p-6">
+                      <h2 className="font-display font-semibold border-b border-border pb-2 mb-3">About {data.company}</h2>
+                      {data.companyBio ? (
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">{data.companyBio}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic mb-4">No biography provided.</p>
+                      )}
+                      <div className="space-y-2 text-xs border-t border-border pt-3">
+                        {data.companyType && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Type:</span>
+                            <span className="font-semibold text-foreground">{data.companyType}</span>
+                          </div>
+                        )}
+                        {data.companySize && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Size:</span>
+                            <span className="font-semibold text-foreground">{data.companySize}</span>
+                          </div>
+                        )}
+                        {data.foundedYear && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Founded:</span>
+                            <span className="font-semibold text-foreground">{data.foundedYear}</span>
+                          </div>
+                        )}
+                        {profileForm.portfolio_url && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Website:</span>
+                            <a
+                              href={profileForm.portfolio_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-primary hover:underline flex items-center gap-0.5"
+                            >
+                              Visit site <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
                       <h2 className="font-display font-semibold">Rating breakdown</h2>
                       <div className="mt-3 space-y-2">
                         {data.ratingBreakdown.map((b) => (
@@ -829,6 +1158,135 @@ function CompanyDashboardPage() {
             );
           })()}
         </TabsContent>
+
+        <TabsContent value="settings">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 font-display text-xl font-bold border-b border-border pb-4 mb-4">
+                  <Mail className="h-5 w-5 text-primary" /> Notifications Configuration
+                </h2>
+                <p className="text-xs text-muted-foreground mb-6">
+                  Choose how you want to be alerted about new student applications and workspace activities.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Email Alerts</Label>
+                      <p className="text-xs text-muted-foreground">Receive daily digests of new applications.</p>
+                    </div>
+                    <Switch
+                      checked={emailNotify}
+                      onCheckedChange={(val) => {
+                        setEmailNotify(val);
+                        localStorage.setItem("recruiter_email_notify", String(val));
+                        toast.success(`Email alerts ${val ? "enabled" : "disabled"}`);
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Push Notifications</Label>
+                      <p className="text-xs text-muted-foreground">Get instant notifications in the browser.</p>
+                    </div>
+                    <Switch
+                      checked={browserNotify}
+                      onCheckedChange={(val) => {
+                        setBrowserNotify(val);
+                        localStorage.setItem("recruiter_browser_notify", String(val));
+                        toast.success(`Push notifications ${val ? "enabled" : "disabled"}`);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 font-display text-xl font-bold border-b border-border pb-4 mb-4">
+                  <Settings className="h-5 w-5 text-primary" /> Workspace Settings
+                </h2>
+                <p className="text-xs text-muted-foreground mb-6">
+                  Manage the visibility of your recruiter workspace and configure workspace developer tools.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Profile Visibility</Label>
+                      <p className="text-xs text-muted-foreground">Make your company public to students.</p>
+                    </div>
+                    <Switch
+                      checked={profileVisible}
+                      onCheckedChange={(val) => {
+                        setProfileVisible(val);
+                        localStorage.setItem("recruiter_profile_visible", String(val));
+                        toast.success(`Profile visibility set to ${val ? "public" : "hidden"}`);
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Developer Mode</Label>
+                      <p className="text-xs text-muted-foreground">Enable verbose logs and diagnostic features.</p>
+                    </div>
+                    <Switch
+                      checked={devMode}
+                      onCheckedChange={(val) => {
+                        setDevMode(val);
+                        localStorage.setItem("recruiter_dev_mode", String(val));
+                        toast.success(`Developer Mode ${val ? "enabled" : "disabled"}`);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 shadow-sm md:col-span-2 border-destructive/20 bg-destructive/5">
+              <h2 className="flex items-center gap-2 font-display text-xl font-bold text-destructive border-b border-destructive/10 pb-4 mb-4">
+                Danger Zone
+              </h2>
+              <p className="text-xs text-muted-foreground mb-6">
+                Irreversible actions that modify or clear your workspace postings and profile data. Use with caution.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="p-4 rounded-lg border border-destructive/10 bg-background flex flex-col justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-sm text-foreground">Delete All Postings</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Remove all active internship listings posted by this account.
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-fit"
+                    onClick={handleClearAllPostings}
+                  >
+                    Clear All Postings
+                  </Button>
+                </div>
+                <div className="p-4 rounded-lg border border-destructive/10 bg-background flex flex-col justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-sm text-foreground">Reset Profile Form</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Clear all input values on your profile form and logo fields locally.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-fit border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={handleResetProfile}
+                  >
+                    Reset Profile Details
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Applicant Detail Dialog */}
@@ -870,7 +1328,7 @@ function CompanyDashboardPage() {
                 </div>
               </div>
 
-              {/* Professional links */}
+              //links
               <div className="flex gap-3 border-t border-border pt-4">
                 {selectedApplicant.profile?.linkedin_url && (
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
@@ -895,7 +1353,7 @@ function CompanyDashboardPage() {
                 )}
               </div>
 
-              {/* Submitted Documents Section */}
+              
               {(selectedApplicant.cv_url || selectedApplicant.ssc_certificate_url || selectedApplicant.hsc_certificate_url) && (
                 <div className="border-t border-border pt-4 space-y-3">
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">

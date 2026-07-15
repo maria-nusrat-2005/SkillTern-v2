@@ -72,7 +72,7 @@ function CompaniesPage() {
             >
               <Card className="flex h-full flex-col p-5 transition-colors group-hover:border-primary/40">
                 <div className="flex items-start justify-between gap-3">
-                  <CompanyLogo domain={c.companyDomain} name={c.company} size={48} />
+                  <CompanyLogo domain={c.companyDomain} name={c.company} logoUrl={c.logoUrl} size={48} />
                   <Stars value={c.avgRating} />
                 </div>
                 <h3 className="mt-3 font-display font-semibold">{c.company}</h3>

@@ -119,13 +119,12 @@ function InternshipDetail() {
 
     setUploading(true);
     try {
-      // 1. Upload CV
+      //  Upload CV
       const cvPath = `${user.id}/${Date.now()}-cv-${cvFile.name}`;
       const { error: cvErr } = await supabase.storage.from("resumes").upload(cvPath, cvFile);
       if (cvErr) throw cvErr;
       const cvUrl = supabase.storage.from("resumes").getPublicUrl(cvPath).data.publicUrl;
 
-      // 2. Upload SSC if selected
       let sscUrl: string | null = null;
       if (sscFile) {
         const sscPath = `${user.id}/${Date.now()}-ssc-${sscFile.name}`;
@@ -134,7 +133,6 @@ function InternshipDetail() {
         sscUrl = supabase.storage.from("resumes").getPublicUrl(sscPath).data.publicUrl;
       }
 
-      // 3. Upload HSC if selected
       let hscUrl: string | null = null;
       if (hscFile) {
         const hscPath = `${user.id}/${Date.now()}-hsc-${hscFile.name}`;

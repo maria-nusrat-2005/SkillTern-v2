@@ -16,6 +16,7 @@ export type CompanySummary = {
   company: string;
   companyDomain: string | null;
   companyType: string | null;
+  logoUrl: string | null;
   roleCount: number;
   domains: string[];
   locations: string[];
@@ -28,11 +29,12 @@ export type CompanySummary = {
 /** Feature 7: List companies with aggregated role + review stats. */
 export const listCompanies = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = publicClient();
-  const [{ data: jobs, error }, { data: reviews }] = await Promise.all([
+  const [{ data: jobs, error }, { data: reviews }, { data: profiles }] = await Promise.all([
     supabase
       .from("internships")
       .select("company,company_domain,company_type,domain,location,salary"),
     supabase.from("company_reviews").select("company,rating"),
+    supabase.from("profiles").select("company_name, logo_url").eq("role", "company"),
   ]);
   if (error) throw new Error(error.message);
 
@@ -41,6 +43,13 @@ export const listCompanies = createServerFn({ method: "GET" }).handler(async () 
     const arr = ratingMap.get(r.company) ?? [];
     arr.push(r.rating);
     ratingMap.set(r.company, arr);
+  }
+
+  const logoMap = new Map<string, string>();
+  for (const p of profiles ?? []) {
+    if (p.company_name && p.logo_url) {
+      logoMap.set(p.company_name, p.logo_url);
+    }
   }
 
   const map = new Map<string, CompanySummary>();
@@ -54,6 +63,7 @@ export const listCompanies = createServerFn({ method: "GET" }).handler(async () 
         company: key,
         companyDomain: j.company_domain,
         companyType: j.company_type,
+        logoUrl: logoMap.get(key) ?? null,
         roleCount: 1,
         domains: j.domain ? [j.domain] : [],
         locations: j.location ? [j.location] : [],
@@ -90,7 +100,7 @@ export const getCompany = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }) => {
     const supabase = publicClient();
-    const [{ data: jobs }, { data: reviews }] = await Promise.all([
+    const [{ data: jobs }, { data: reviews }, { data: companyProfile }] = await Promise.all([
       supabase
         .from("internships")
         .select("id,title,domain,location,work_model,salary,company_domain,company_type,duration")
@@ -101,6 +111,12 @@ export const getCompany = createServerFn({ method: "GET" })
         .select("*")
         .eq("company", data.company)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("company_name, company_domain, company_type, company_size, founded_year, company_bio, logo_url, location")
+        .eq("role", "company")
+        .eq("company_name", data.company)
+        .maybeSingle(),
     ]);
 
     const ratings = (reviews ?? []).map((r) => r.rating);
@@ -114,8 +130,13 @@ export const getCompany = createServerFn({ method: "GET" })
 
     return {
       company: data.company,
-      companyDomain: jobs?.[0]?.company_domain ?? null,
-      companyType: jobs?.[0]?.company_type ?? null,
+      companyDomain: companyProfile?.company_domain ?? jobs?.[0]?.company_domain ?? null,
+      companyType: companyProfile?.company_type ?? jobs?.[0]?.company_type ?? null,
+      companySize: companyProfile?.company_size ?? null,
+      foundedYear: companyProfile?.founded_year ?? null,
+      companyBio: companyProfile?.company_bio ?? null,
+      logoUrl: companyProfile?.logo_url ?? null,
+      location: companyProfile?.location ?? jobs?.[0]?.location ?? null,
       internships: jobs ?? [],
       reviews: reviews ?? [],
       avgRating,

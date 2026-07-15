@@ -12,6 +12,7 @@ import {
   PenLine,
   ThumbsUp,
   ThumbsDown,
+  ExternalLink,
 } from "lucide-react";
 import {
   getCompany,
@@ -122,7 +123,7 @@ function CompanyDetail() {
       <Card className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <CompanyLogo domain={data.companyDomain} name={data.company} size={56} />
+            <CompanyLogo domain={data.companyDomain} name={data.company} logoUrl={data.logoUrl} size={56} />
             <div>
               <h1 className="font-display text-2xl font-bold tracking-tight">{data.company}</h1>
               {data.companyType && (
@@ -245,6 +246,48 @@ function CompanyDetail() {
         </div>
 
         <div className="space-y-6">
+          <Card className="p-6">
+            <h2 className="font-display font-semibold border-b border-border pb-2 mb-3">About {data.company}</h2>
+            {data.companyBio ? (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">{data.companyBio}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic mb-4">No biography provided.</p>
+            )}
+            <div className="space-y-2 text-xs border-t border-border pt-3">
+              {data.companyType && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Type:</span>
+                  <span className="font-semibold text-foreground">{data.companyType}</span>
+                </div>
+              )}
+              {data.companySize && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Size:</span>
+                  <span className="font-semibold text-foreground">{data.companySize}</span>
+                </div>
+              )}
+              {data.foundedYear && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Founded:</span>
+                  <span className="font-semibold text-foreground">{data.foundedYear}</span>
+                </div>
+              )}
+              {data.companyDomain && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Website:</span>
+                  <a
+                    href={`https://${data.companyDomain}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    Visit site <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+            </div>
+          </Card>
+
           <Card className="p-6">
             <h2 className="font-display font-semibold">Rating breakdown</h2>
             <div className="mt-3 space-y-2">
