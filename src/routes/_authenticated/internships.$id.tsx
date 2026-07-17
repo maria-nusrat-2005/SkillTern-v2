@@ -125,6 +125,7 @@ function InternshipDetail() {
     }),
     onSuccess: (_d, variables) => {
       qc.invalidateQueries({ queryKey: ["applications"] });
+      qc.invalidateQueries({ queryKey: ["my-application", id] });
       toast.success(variables.status === "applied" ? "Application submitted successfully!" : "Saved to your applications.");
       setIsApplyModalOpen(false);
       // Reset files
@@ -478,21 +479,32 @@ function InternshipDetail() {
               </p>
             )}
             <div className="mt-4 space-y-2">
-              <Button
-                className="w-full gap-2"
-                disabled={save.isPending}
-                onClick={() => setIsApplyModalOpen(true)}
-              >
-                <CheckCircle2 className="h-4 w-4" /> Apply Now
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                disabled={save.isPending}
-                onClick={() => save.mutate({ status: "saved" })}
-              >
-                <Bookmark className="h-4 w-4" /> Save for later
-              </Button>
+              {myApp && myApp.status !== "saved" ? (
+                <Button
+                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-600 disabled:opacity-100 cursor-default text-white"
+                  disabled
+                >
+                  <CheckCircle2 className="h-4 w-4" /> Already Applied
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    className="w-full gap-2"
+                    disabled={save.isPending}
+                    onClick={() => setIsApplyModalOpen(true)}
+                  >
+                    <CheckCircle2 className="h-4 w-4" /> Apply Now
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    disabled={save.isPending}
+                    onClick={() => save.mutate({ status: "saved" })}
+                  >
+                    <Bookmark className="h-4 w-4" /> Save for later
+                  </Button>
+                </>
+              )}
             </div>
             <div className="mt-3 flex gap-2">
               <BookmarkButton internshipId={id} variant="full" />
