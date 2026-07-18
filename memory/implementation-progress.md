@@ -55,4 +55,5 @@ This document tracks overall progress against implementation milestones.
   - [x] Remove mock/static OAuth logic and buttons, expose JWT token payload in responses, and create API testing guide.
   - [x] Consolidate student workspace into exactly 4 frontend sections (Dashboard, Profile, Resume, Applications) mapped to the scalable backend.
   - [x] Create/update root `.gitignore` to ignore dependency folders, build directories, environment configs, local uploads, and temp workspace files.
+  - [x] Redesign Recruiter Dashboard layout with stats cards, tabs, and applicant review modal (incorporating LinkedIn, GitHub, and View CV buttons) and simplify the company sidebar navigation.
 

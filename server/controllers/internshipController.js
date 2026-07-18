@@ -17,9 +17,40 @@ const list = async (req, res, next) => {
       location,
       internshipType,
       category,
+      recruiterId,
     } = req.query;
 
-    const query = { status: 'Published' };
+    let query = {};
+
+    // Check optional authentication token to see if logged-in user is recruiter
+    let token = req.cookies.token;
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    let isRecruiter = false;
+    let loggedInUserId = null;
+    if (token) {
+      try {
+        const secret = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET || 'fallback_secret_key';
+        const decoded = jwt.verify(token, secret);
+        if (decoded && decoded.role === 'recruiter') {
+          isRecruiter = true;
+          loggedInUserId = decoded.id;
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    if (isRecruiter && (recruiterId === loggedInUserId || !recruiterId)) {
+      query.recruiterId = loggedInUserId;
+    } else {
+      query.status = 'Published';
+      if (recruiterId) {
+        query.recruiterId = recruiterId;
+      }
+    }
 
     // Text search on title
     if (search) {
@@ -52,7 +83,7 @@ const list = async (req, res, next) => {
     ]);
 
     // Check optional authentication token in cookie/headers
-    let token = req.cookies.token;
+    token = req.cookies.token || token;
     if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
     }

@@ -12,8 +12,6 @@ const studentNav = [
 
 const recruiterNav = [
   { label: 'Dashboard', path: '/recruiter/dashboard', icon: LayoutDashboard },
-  { label: 'Candidates', path: '/applications', icon: FileText },
-  { label: 'Company Profile', path: '/profile', icon: Briefcase },
 ];
 
 const adminNav = [
@@ -120,7 +118,9 @@ const DashboardLayout = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-slate-400 capitalize">{user?.role || 'student'}</p>
+              <p className="text-xs text-slate-400 capitalize">
+                {user?.role === 'recruiter' && user?.profile?.companyName ? user.profile.companyName : user?.role || 'student'}
+              </p>
             </div>
             <button
               onClick={handleLogout}

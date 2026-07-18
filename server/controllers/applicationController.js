@@ -1,5 +1,6 @@
 const Application = require('../models/Application');
 const Internship = require('../models/Internship');
+const StudentProfile = require('../models/StudentProfile');
 
 /**
  * @desc    Submit a new application
@@ -100,11 +101,28 @@ const listApplications = async (req, res, next) => {
       Application.countDocuments(query),
     ]);
 
+    // Populate student profiles for the returned applications
+    const studentIds = applications.map(app => app.studentId?._id).filter(Boolean);
+    const studentProfiles = await StudentProfile.find({ userId: { $in: studentIds } }).lean();
+    const profileMap = {};
+    studentProfiles.forEach(p => {
+      profileMap[p.userId.toString()] = p;
+    });
+
+    const processedApplications = applications.map(app => {
+      if (app.studentId?._id) {
+        app.studentProfile = profileMap[app.studentId._id.toString()] || null;
+      } else {
+        app.studentProfile = null;
+      }
+      return app;
+    });
+
     res.status(200).json({
       success: true,
       message: 'Applications retrieved successfully.',
       data: {
-        applications,
+        applications: processedApplications,
         pagination: {
           page: pageNum,
           limit: limitNum,
@@ -181,6 +199,9 @@ const getApplicationDetail = async (req, res, next) => {
       res.status(404);
       return next(new Error('Application not found or unauthorized.'));
     }
+
+    const studentProfile = await StudentProfile.findOne({ userId: application.studentId?._id }).lean();
+    application.studentProfile = studentProfile || null;
 
     res.status(200).json({
       success: true,

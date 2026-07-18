@@ -4,12 +4,13 @@ This document captures the current development status, deployment parameters, an
 
 ## Current Session Status
 - **Phase:** Post-Production Verification & Maintenance.
-- **Active Task:** Create and optimize root gitignore rules.
-- **Last Completed:** Updated root `.gitignore` to comprehensively ignore dependency directories, environment configurations, production build outputs, local server uploads, log files, temporary editor files, and `.gemini`/`.puku` tool workspace folders.
+- **Active Task:** Redesigned Recruiter Dashboard with statistics, tabs, applicant review modal (with LinkedIn, GitHub, and View CV buttons), and simplified company navigation.
+- **Last Completed:** Implemented CV PDF link population, simplified sidebar menu (Dashboard only for recruiters), and connected Recruitment Stage updates to the backend API.
 
 ---
 
 ## Completed Work
+- **Workspace Dev Setup:** Configured `package.json` in the root with `concurrently` and start scripts so both the frontend client and backend server can be run concurrently via `npm run dev`.
 - **Git Config Maintenance:** Added root-level `.gitignore` configured for monorepo structure.
 - **Auth Fix & Verification:** Resolved the infinite reload redirect loop on unauthorized API requests, and verified all core authentication flows on client and server sides. Created detailed API testing documentation.
 - **Phase 1 (Discovery):** Formatted PRD, established context packs, database schemas, API specs, and UI architecture docs.
