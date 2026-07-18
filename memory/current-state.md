@@ -10,6 +10,7 @@ This document captures the current development status, deployment parameters, an
 ---
 
 ## Completed Work
+- **Remote Integration:** Merged and integrated changes from the `SkillTern-v2` repository, resolved conflict files (`.gitignore`, `AGENTS.md`, `package.json`, `package-lock.json`), and pushed the merged workspace to both the original `skilltern` and new `SkillTern-v2` repositories.
 - **Workspace Dev Setup:** Configured `package.json` in the root with `concurrently` and start scripts so both the frontend client and backend server can be run concurrently via `npm run dev`.
 - **Git Config Maintenance:** Added root-level `.gitignore` configured for monorepo structure.
 - **Auth Fix & Verification:** Resolved the infinite reload redirect loop on unauthorized API requests, and verified all core authentication flows on client and server sides. Created detailed API testing documentation.
