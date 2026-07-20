@@ -1,11 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { User, Settings, Github, CheckCircle2, Circle, Star, Loader2, Sparkles, FileText, Copy, ExternalLink, Upload } from "lucide-react";
+import {
+  User,
+  Settings,
+  Github,
+  CheckCircle2,
+  Circle,
+  Star,
+  Loader2,
+  Sparkles,
+  FileText,
+  Copy,
+  ExternalLink,
+  Upload,
+  Briefcase,
+  MapPin,
+  Calendar,
+  ChevronRight,
+} from "lucide-react";
 import { getProfileData, updateProfile, savePreferences, getStudentProfileCv, uploadProfileCv } from "@/lib/profile.functions";
+import { listApplications } from "@/lib/applications.functions";
 import { importGitHub } from "@/lib/github.functions";
 import { PageHeader } from "@/components/dashboard-bits";
+import { CompanyLogo } from "@/components/company-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +32,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -43,11 +64,68 @@ function asArr(v: unknown): string[] {
   return Array.isArray(v) ? v.map(String) : [];
 }
 
+const APP_STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
+  applied: {
+    label: "Applied",
+    badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  },
+  interviewing: {
+    label: "Interviewing",
+    badgeClass: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20 font-semibold",
+  },
+  offer: {
+    label: "Offer Received",
+    badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-semibold",
+  },
+  rejected: {
+    label: "Rejected",
+    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  },
+};
+
 function ProfilePage() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["profile"], queryFn: () => getProfileData() });
   const profileCvQ = useQuery({ queryKey: ["student-profile-cv"], queryFn: () => getStudentProfileCv() });
   const profileCv = profileCvQ.data;
+
+  const appsQ = useQuery({ queryKey: ["applications"], queryFn: () => listApplications() });
+  const [appFilter, setAppFilter] = useState<string>("all");
+
+  const rawApps = (appsQ.data?.applications ?? []) as Array<{
+    id: string;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
+    internship_id: string;
+    internship?: {
+      id?: string;
+      title?: string;
+      company?: string;
+      company_domain?: string | null;
+      location?: string | null;
+      work_model?: string | null;
+    } | null;
+  }>;
+
+  const appliedApps = useMemo(() => {
+    return rawApps.filter((a) => a.status !== "saved");
+  }, [rawApps]);
+
+  const stats = useMemo(() => {
+    return {
+      all: appliedApps.length,
+      applied: appliedApps.filter((a) => a.status === "applied").length,
+      interviewing: appliedApps.filter((a) => a.status === "interviewing").length,
+      offer: appliedApps.filter((a) => a.status === "offer").length,
+      rejected: appliedApps.filter((a) => a.status === "rejected").length,
+    };
+  }, [appliedApps]);
+
+  const filteredApps = useMemo(() => {
+    if (appFilter === "all") return appliedApps;
+    return appliedApps.filter((a) => a.status === appFilter);
+  }, [appliedApps, appFilter]);
 
   const uploadCvM = useMutation({
     mutationFn: async (file: File) => {
@@ -446,6 +524,170 @@ function ProfilePage() {
           </Button>
         </Card>
       </div>
+
+      <Card className="mt-6 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 font-display font-semibold text-lg">
+              <Briefcase className="h-5 w-5 text-primary" /> Applied Internships
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Track internships you have applied to and monitor their status.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="gap-1.5 self-start sm:self-auto text-xs">
+            <Link to="/applications">
+              Manage in Kanban <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Filter / Counter Tabs */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {[
+            { id: "all", label: "All Applied", count: stats.all },
+            { id: "applied", label: "Applied", count: stats.applied },
+            { id: "interviewing", label: "Interviewing", count: stats.interviewing },
+            { id: "offer", label: "Offers", count: stats.offer },
+            { id: "rejected", label: "Rejected", count: stats.rejected },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setAppFilter(tab.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                appFilter === tab.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
+              )}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                  appFilter === tab.id
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* List Content */}
+        <div className="mt-5">
+          {appsQ.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+            </div>
+          ) : appliedApps.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center space-y-3">
+              <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">No applied internships yet</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  When you submit applications for internships, they will appear right here.
+                </p>
+              </div>
+              <Button asChild size="sm" className="mt-2">
+                <Link to="/internships">Explore Internships</Link>
+              </Button>
+            </div>
+          ) : filteredApps.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+              No applications match the "{appFilter}" filter.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredApps.map((app) => {
+                const config = APP_STATUS_CONFIG[app.status] ?? {
+                  label: app.status,
+                  badgeClass: "bg-secondary text-secondary-foreground",
+                };
+                const appliedDate = app.created_at
+                  ? new Date(app.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : null;
+
+                return (
+                  <div
+                    key={app.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <CompanyLogo
+                        domain={app.internship?.company_domain}
+                        name={app.internship?.company}
+                        size={40}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {app.internship?.title ? (
+                            <Link
+                              to="/internships/$id"
+                              params={{ id: app.internship_id }}
+                              className="font-display font-semibold text-sm hover:text-primary transition-colors truncate"
+                            >
+                              {app.internship.title}
+                            </Link>
+                          ) : (
+                            <span className="font-display font-semibold text-sm">
+                              Internship Position
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {app.internship?.company ?? "Unknown Company"}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+                          {app.internship?.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-primary/70" />
+                              {app.internship.location}
+                            </span>
+                          )}
+                          {app.internship?.work_model && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal">
+                              {app.internship.work_model}
+                            </Badge>
+                          )}
+                          {appliedDate && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-muted-foreground/70" />
+                              Applied {appliedDate}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                      <Badge variant="outline" className={cn("text-xs px-2.5 py-0.5", config.badgeClass)}>
+                        {config.label}
+                      </Badge>
+
+                      <Button asChild size="sm" variant="ghost" className="h-8 px-2.5 text-xs gap-1">
+                        <Link to="/internships/$id" params={{ id: app.internship_id }}>
+                          View <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
