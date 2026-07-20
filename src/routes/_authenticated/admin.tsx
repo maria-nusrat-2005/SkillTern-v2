@@ -194,10 +194,10 @@ function AdminConsolePage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
-                              {(u.full_name ?? "U")[0].toUpperCase()}
+                              {(u.full_name && u.full_name.trim() ? u.full_name.trim()[0] : "U").toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-semibold text-sm">{u.full_name ?? "User"}</p>
+                              <p className="font-semibold text-sm">{u.full_name || "User"}</p>
                               {u.role === "company" && u.company_name && (
                                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                                   <Building className="h-3 w-3" /> {u.company_name}
@@ -208,13 +208,13 @@ function AdminConsolePage() {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Mail className="h-3.5 w-3.5" /> {u.email}
+                            <Mail className="h-3.5 w-3.5" /> {u.email || "No Email"}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
-                            {new Date(u.created_at).toLocaleDateString()}
+                            {u.created_at ? new Date(u.created_at).toLocaleDateString() : "N/A"}
                           </span>
                         </TableCell>
                         <TableCell>
